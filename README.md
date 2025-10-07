@@ -1,4 +1,5 @@
 Calculadora de Frete
+
 Uma calculadora simples, moderna e eficiente para estimar custos e preços de fretes de forma rápida e precisa.
 
 Funcionalidades
