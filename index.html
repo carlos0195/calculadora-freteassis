@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Frete Avançada</title>
+    <title>Calculadora de Frete com API de Distância</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -36,6 +36,29 @@
             font-weight: 600;
             color: #1d4ed8; /* blue-700 */
         }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 4px solid #3498db;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .tab-btn {
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .tab-btn.active {
+            border-bottom-color: #4f46e5; /* indigo-600 */
+            color: #4f46e5;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
@@ -43,7 +66,7 @@
     <div class="w-full max-w-4xl mx-auto">
         <header class="text-center mb-8">
             <h1 class="text-4xl font-bold text-gray-800">Calculadora de Frete Assis</h1>
-            <p class="text-gray-600 mt-2">Preencha os campos para simular o custo e o preço do seu frete.</p>
+            <p class="text-gray-600 mt-2">Calcule por endereço ou insira a distância manualmente.</p>
         </header>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -51,11 +74,37 @@
             <div class="card space-y-6">
                 <div>
                     <h2 class="text-2xl font-semibold text-gray-700 border-b pb-2 mb-4">Dados da Viagem</h2>
+                    
+                    <div class="flex border-b mb-4">
+                        <div id="tabAddress" class="tab-btn active" onclick="switchMode('address')">Por Endereço</div>
+                        <div id="tabManual" class="tab-btn" onclick="switchMode('manual')">Por KM Manual</div>
+                    </div>
+
                     <div class="space-y-4">
-                        <div>
-                            <label for="distancia" class="block text-sm font-medium text-gray-700">Distância da Viagem (KM)</label>
-                            <input type="number" id="distancia" placeholder="Ex: 50" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2">
+                        <div id="addressInputs">
+                            <div>
+                                <label for="origin" class="block text-sm font-medium text-gray-700">Endereço de Origem</label>
+                                <input type="text" id="origin" placeholder="Rua, número, cidade, estado" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2">
+                            </div>
+                            <div>
+                                <label for="destination" class="block text-sm font-medium text-gray-700">Endereço de Destino</label>
+                                <input type="text" id="destination" placeholder="Rua, número, cidade, estado" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2">
+                            </div>
+                            <div class="mt-2">
+                                <button id="fetchDistanceBtn" onclick="initiateDistanceCalculation()" class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300 text-sm flex justify-center items-center">
+                                    <span id="fetchBtnText">Buscar Distância</span>
+                                    <div id="fetchLoader" class="loader hidden ml-3" style="border-top-color: white; width: 16px; height: 16px;"></div>
+                                </button>
+                            </div>
                         </div>
+                        
+                        <div id="manualKmInput" class="hidden">
+                             <label for="manual_distancia" class="block text-sm font-medium text-gray-700">Distância da Viagem (KM)</label>
+                            <input type="number" id="manual_distancia" oninput="updateManualDistance()" placeholder="Ex: 50" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2">
+                        </div>
+
+                        <hr/>
+                        
                         <div>
                             <label for="pedagio" class="block text-sm font-medium text-gray-700">Custo Total com Pedágios (R$)</label>
                             <input type="number" id="pedagio" placeholder="Ex: 26" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2">
@@ -67,6 +116,10 @@
                                 <button id="btnIdaVolta" onclick="setTripType('ida_volta')" class="relative -ml-px inline-flex items-center space-x-2 border border-gray-300 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 rounded-r-md">Ida e Volta</button>
                                 <input type="hidden" id="tripType" value="ida">
                             </div>
+                        </div>
+                        <div>
+                            <label for="distancia" class="block text-sm font-medium text-gray-700">Distância Final (KM)</label>
+                            <input type="number" id="distancia" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-gray-100" readonly placeholder="Aguardando dados...">
                         </div>
                     </div>
                 </div>
@@ -104,9 +157,14 @@
                         </div>
                     </div>
                 </div>
-                <button onclick="calculateFreight()" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition duration-300 text-lg">
-                    Calcular Frete
-                </button>
+                <div class="flex gap-4">
+                    <button id="clearBtn" onclick="clearFields()" class="w-1/3 bg-gray-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-600 transition duration-300 text-lg">
+                        Limpar
+                    </button>
+                    <button id="calculateBtn" onclick="startCalculation()" class="w-2/3 bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition duration-300 text-lg flex justify-center items-center">
+                        Calcular Frete
+                    </button>
+                </div>
             </div>
 
             <!-- Coluna de Resultados -->
@@ -157,33 +215,65 @@
         </div>
     </div>
 
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDWjV9NE_ZDjTda62_7iwhHb2QWsxn44ZQ&libraries=places"></script>
+
     <script>
-        function setTripType(type) {
-            const btnIda = document.getElementById('btnIda');
-            const btnIdaVolta = document.getElementById('btnIdaVolta');
-            document.getElementById('tripType').value = type;
+        let calculationMode = 'address';
+        let baseDistance = 0; // Armazena a distância de "só ida"
 
-            if (type === 'ida') {
-                btnIda.classList.remove('bg-gray-50', 'text-gray-700');
-                btnIda.classList.add('bg-green-500', 'text-white');
-                btnIdaVolta.classList.remove('bg-green-500', 'text-white');
-                btnIdaVolta.classList.add('bg-gray-50', 'text-gray-700');
-            } else {
-                btnIdaVolta.classList.remove('bg-gray-50', 'text-gray-700');
-                btnIdaVolta.classList.add('bg-green-500', 'text-white');
-                btnIda.classList.remove('bg-green-500', 'text-white');
-                btnIda.classList.add('bg-gray-50', 'text-gray-700');
+        function switchMode(mode) {
+            calculationMode = mode;
+            document.getElementById('tabAddress').classList.toggle('active', mode === 'address');
+            document.getElementById('tabManual').classList.toggle('active', mode === 'manual');
+            document.getElementById('addressInputs').classList.toggle('hidden', mode !== 'address');
+            document.getElementById('manualKmInput').classList.toggle('hidden', mode !== 'manual');
+            clearFields();
+        }
+
+        function startCalculation() {
+            const distanciaFinal = parseFloat(document.getElementById('distancia').value) || 0;
+            if (distanciaFinal <= 0) {
+                if (calculationMode === 'address') {
+                    alert('Por favor, busque a distância entre os endereços primeiro.');
+                } else {
+                    alert('Por favor, insira uma distância válida no modo manual.');
+                }
+                return;
             }
+            calculateFreight();
         }
 
-        function formatCurrency(value) {
-            return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        function initiateDistanceCalculation() {
+            const origin = document.getElementById('origin').value;
+            const destination = document.getElementById('destination').value;
+            if (!origin || !destination) {
+                alert('Por favor, preencha os endereços de origem e destino.');
+                return;
+            }
+            toggleFetchLoader(true);
+            const service = new google.maps.DistanceMatrixService();
+            service.getDistanceMatrix({
+                origins: [origin],
+                destinations: [destination],
+                travelMode: 'DRIVING',
+                unitSystem: google.maps.UnitSystem.METRIC,
+            }, (response, status) => {
+                if (status === 'OK' && response.rows[0].elements[0].status === 'OK') {
+                    baseDistance = response.rows[0].elements[0].distance.value / 1000;
+                    updateDistanceDisplay();
+                } else {
+                    alert('Não foi possível calcular a distância. Verifique os endereços e tente novamente.');
+                }
+                toggleFetchLoader(false);
+            });
         }
-
+        
         function calculateFreight() {
-            // --- Obter valores dos inputs ---
-            const distanciaOriginal = parseFloat(document.getElementById('distancia').value) || 0;
+            const distanciaFinal = parseFloat(document.getElementById('distancia').value) || 0;
             const pedagioOriginal = parseFloat(document.getElementById('pedagio').value) || 0;
+            const tripType = document.getElementById('tripType').value;
+            const isRoundTrip = tripType === 'ida_volta';
+
             const precoGasolina = parseFloat(document.getElementById('precoGasolina').value) || 0;
             const kmLitro = parseFloat(document.getElementById('kmLitro').value) || 1;
             const despesaFixa = parseFloat(document.getElementById('despesaFixa').value) || 0;
@@ -191,59 +281,87 @@
             const custoAlmoco = parseFloat(document.getElementById('custoAlmoco').value) || 0;
             const fatorKm = parseFloat(document.getElementById('fatorKm').value) || 0;
             const descontoFixo = parseFloat(document.getElementById('descontoFixo').value) || 0;
-            const tripType = document.getElementById('tripType').value;
             
-            // --- Ajustar valores para Ida e Volta ---
-            const isRoundTrip = tripType === 'ida_volta';
-            const distanciaCalculo = isRoundTrip ? distanciaOriginal * 2 : distanciaOriginal;
             const pedagioCalculo = isRoundTrip ? pedagioOriginal * 2 : pedagioOriginal;
 
-            // --- Cálculos ---
-
-            // 1. Custo com Combustível
-            const litrosGastos = distanciaCalculo / kmLitro;
+            const litrosGastos = distanciaFinal / kmLitro;
             const vlrCombustivel = litrosGastos * precoGasolina;
-
-            // 2. Custo Fixo Diário com Desconto
             const custoFixoDiario = despesaFixa / diasTrabalhados;
-            const horasDeViagem = distanciaCalculo / 70; 
+            const horasDeViagem = distanciaFinal / 70; 
             const diasDeViagem = Math.ceil(horasDeViagem / 9);
             const vlrCustoFixoBruto = diasDeViagem * custoFixoDiario;
             const valorDescontoAplicado = vlrCustoFixoBruto * (descontoFixo / 100);
             const vlrCustoFixo = vlrCustoFixoBruto - valorDescontoAplicado;
-
-            // 3. Lucro por KM Rodado
-            const vlrLucroKm = distanciaCalculo * fatorKm;
-
-            // 4. Custo com refeições
+            const vlrLucroKm = distanciaFinal * fatorKm;
             const vlrRefeicao = diasDeViagem * custoAlmoco;
-
-            // 5. Custo Total da Viagem (soma de todos os custos reais)
             const custoTotalViagem = vlrCombustivel + vlrCustoFixo + pedagioCalculo + vlrRefeicao;
-            
-            // 6. Preço Final (Custo Total + Lucro por KM)
             const precoFinal = custoTotalViagem + vlrLucroKm;
-            
-            // 7. Valor Médio por KM (baseado na distância original que o cliente entende)
-            const valorKmMedio = precoFinal / distanciaOriginal;
+            const valorKmMedio = baseDistance > 0 ? precoFinal / baseDistance : 0;
 
-            // --- Exibir Resultados ---
             document.getElementById('custoCombustivel').textContent = formatCurrency(vlrCombustivel);
             document.getElementById('custoFixo').textContent = `${formatCurrency(vlrCustoFixo)} (${diasDeViagem} diária(s))`;
             document.getElementById('valorDesconto').textContent = `- ${formatCurrency(valorDescontoAplicado)} (${descontoFixo}%)`;
             document.getElementById('custoPedagio').textContent = formatCurrency(pedagioCalculo);
             document.getElementById('custoRefeicao').textContent = formatCurrency(vlrRefeicao);
             document.getElementById('lucroKmRodado').textContent = formatCurrency(vlrLucroKm);
-            
             document.getElementById('custoTotal').textContent = formatCurrency(custoTotalViagem);
             document.getElementById('valorTotal').textContent = formatCurrency(precoFinal);
             document.getElementById('valorMedioKm').textContent = `${formatCurrency(valorKmMedio)} / km`;
-
-            // Exibe o card de resultados
             document.getElementById('resultCard').classList.remove('hidden');
         }
-    </script>
 
+        function setTripType(type) {
+            document.getElementById('tripType').value = type;
+            const btnIda = document.getElementById('btnIda');
+            const btnIdaVolta = document.getElementById('btnIdaVolta');
+            btnIda.classList.toggle('bg-green-500', type === 'ida');
+            btnIda.classList.toggle('text-white', type === 'ida');
+            btnIda.classList.toggle('bg-gray-50', type !== 'ida');
+            btnIda.classList.toggle('text-gray-700', type !== 'ida');
+            btnIdaVolta.classList.toggle('bg-green-500', type === 'ida_volta');
+            btnIdaVolta.classList.toggle('text-white', type === 'ida_volta');
+            btnIdaVolta.classList.toggle('bg-gray-50', type !== 'ida_volta');
+            btnIdaVolta.classList.toggle('text-gray-700', type !== 'ida_volta');
+            updateDistanceDisplay();
+        }
+        
+        function updateManualDistance() {
+            baseDistance = parseFloat(document.getElementById('manual_distancia').value) || 0;
+            updateDistanceDisplay();
+        }
+
+        function updateDistanceDisplay() {
+            if (baseDistance > 0) {
+                const tripType = document.getElementById('tripType').value;
+                const finalDistance = tripType === 'ida_volta' ? baseDistance * 2 : baseDistance;
+                document.getElementById('distancia').value = finalDistance.toFixed(2);
+            } else {
+                 document.getElementById('distancia').value = '';
+            }
+        }
+
+        function clearFields() {
+            document.getElementById('origin').value = '';
+            document.getElementById('destination').value = '';
+            document.getElementById('manual_distancia').value = '';
+            document.getElementById('pedagio').value = '';
+            document.getElementById('distancia').value = '';
+            document.getElementById('distancia').placeholder = 'Aguardando dados...';
+            baseDistance = 0;
+            document.getElementById('resultCard').classList.add('hidden');
+            setTripType('ida');
+        }
+        
+        function toggleFetchLoader(show) {
+            document.getElementById('fetchLoader').classList.toggle('hidden', !show);
+            document.getElementById('fetchBtnText').classList.toggle('hidden', show);
+            document.getElementById('fetchDistanceBtn').disabled = show;
+        }
+
+        function formatCurrency(value) {
+            return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+    </script>
 </body>
 </html>
 
