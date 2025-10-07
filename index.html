@@ -207,7 +207,7 @@
             // 2. Custo Fixo Diário com Desconto
             const custoFixoDiario = despesaFixa / diasTrabalhados;
             const horasDeViagem = distanciaCalculo / 70; 
-            const diasDeViagem = Math.ceil(horasDeViagem / 8);
+            const diasDeViagem = Math.ceil(horasDeViagem / 9);
             const vlrCustoFixoBruto = diasDeViagem * custoFixoDiario;
             const valorDescontoAplicado = vlrCustoFixoBruto * (descontoFixo / 100);
             const vlrCustoFixo = vlrCustoFixoBruto - valorDescontoAplicado;
