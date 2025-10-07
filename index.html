@@ -76,12 +76,12 @@
                     <h2 class="text-2xl font-semibold text-gray-700 border-b pb-2 mb-4">Dados da Viagem</h2>
                     
                     <div class="flex border-b mb-4">
-                        <div id="tabAddress" class="tab-btn active" onclick="switchMode('address')">Por Endereço</div>
-                        <div id="tabManual" class="tab-btn" onclick="switchMode('manual')">Por KM Manual</div>
+                        <div id="tabManual" class="tab-btn active" onclick="switchMode('manual')">Por KM Manual</div>
+                        <div id="tabAddress" class="tab-btn" onclick="switchMode('address')">Por Endereço</div>
                     </div>
 
                     <div class="space-y-4">
-                        <div id="addressInputs">
+                        <div id="addressInputs" class="hidden">
                             <div>
                                 <label for="origin" class="block text-sm font-medium text-gray-700">Endereço de Origem</label>
                                 <input type="text" id="origin" placeholder="Rua, número, cidade, estado" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2">
@@ -98,7 +98,7 @@
                             </div>
                         </div>
                         
-                        <div id="manualKmInput" class="hidden">
+                        <div id="manualKmInput">
                              <label for="manual_distancia" class="block text-sm font-medium text-gray-700">Distância da Viagem (KM)</label>
                             <input type="number" id="manual_distancia" oninput="updateManualDistance()" placeholder="Ex: 50" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2">
                         </div>
@@ -218,7 +218,7 @@
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDWjV9NE_ZDjTda62_7iwhHb2QWsxn44ZQ&libraries=places"></script>
 
     <script>
-        let calculationMode = 'address';
+        let calculationMode = 'manual';
         let baseDistance = 0; // Armazena a distância de "só ida"
 
         function switchMode(mode) {
