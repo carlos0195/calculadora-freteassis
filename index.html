@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Frete Avançada</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .card {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease-in-out;
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        .total-highlight {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #16a34a; /* green-600 */
+        }
+        .km-highlight {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1d4ed8; /* blue-700 */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="w-full max-w-4xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800">Calculadora de Frete</h1>
+            <p class="text-gray-600 mt-2">Preencha os campos para simular o custo e o preço do seu frete.</p>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Coluna de Inputs -->
+            <div class="card space-y-6">
+                <div>
+                    <h2 class="text-2xl font-semibold text-gray-700 border-b pb-2 mb-4">Dados da Viagem</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="distancia" class="block text-sm font-medium text-gray-700">Distância da Viagem (KM)</label>
+                            <input type="number" id="distancia" placeholder="Ex: 50" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2">
+                        </div>
+                        <div>
+                            <label for="pedagio" class="block text-sm font-medium text-gray-700">Custo Total com Pedágios (R$)</label>
+                            <input type="number" id="pedagio" placeholder="Ex: 26" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2">
+                        </div>
+                         <div>
+                            <label class="block text-sm font-medium text-gray-700">Tipo de Viagem</label>
+                            <div class="mt-2 flex rounded-md shadow-sm">
+                                <button id="btnIda" onclick="setTripType('ida')" class="relative inline-flex items-center space-x-2 rounded-l-md border border-gray-300 bg-green-500 px-4 py-2 text-sm font-medium text-white hover:bg-green-600 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">Só Ida</button>
+                                <button id="btnIdaVolta" onclick="setTripType('ida_volta')" class="relative -ml-px inline-flex items-center space-x-2 border border-gray-300 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 rounded-r-md">Ida e Volta</button>
+                                <input type="hidden" id="tripType" value="ida">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="text-2xl font-semibold text-gray-700 border-b pb-2 mb-4">Parâmetros de Custo</h2>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="precoGasolina" class="block text-sm font-medium text-gray-700">Preço Gasolina (R$)</label>
+                            <input type="number" id="precoGasolina" value="6.40" step="0.01" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label for="kmLitro" class="block text-sm font-medium text-gray-700">Consumo (KM/L)</label>
+                            <input type="number" id="kmLitro" value="11" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label for="despesaFixa" class="block text-sm font-medium text-gray-700">Despesa Fixa (R$)</label>
+                            <input type="number" id="despesaFixa" value="6059" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label for="diasTrabalhados" class="block text-sm font-medium text-gray-700">Dias/Mês</label>
+                            <input type="number" id="diasTrabalhados" value="26" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label for="custoAlmoco" class="block text-sm font-medium text-gray-700">Almoço (R$)</label>
+                            <input type="number" id="custoAlmoco" value="20" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label for="fatorKm" class="block text-sm font-medium text-gray-700">Lucro por KM (R$)</label>
+                            <input type="number" id="fatorKm" value="0.20" step="0.01" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                        </div>
+                         <div class="col-span-2">
+                            <label for="descontoFixo" class="block text-sm font-medium text-gray-700">Desconto Desp. Fixa (%)</label>
+                            <input type="number" id="descontoFixo" value="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                        </div>
+                    </div>
+                </div>
+                <button onclick="calculateFreight()" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition duration-300 text-lg">
+                    Calcular Frete
+                </button>
+            </div>
+
+            <!-- Coluna de Resultados -->
+            <div id="resultCard" class="card hidden">
+                <h2 class="text-2xl font-semibold text-gray-700 border-b pb-2 mb-4">Relatório do Frete</h2>
+                <div class="space-y-2">
+                    <div class="result-item">
+                        <span class="font-medium text-gray-600">Custo com Combustível:</span>
+                        <span id="custoCombustivel" class="font-semibold text-gray-800"></span>
+                    </div>
+                    <div class="result-item">
+                        <span class="font-medium text-gray-600">Custo Fixo (Diária):</span>
+                        <span id="custoFixo" class="font-semibold text-gray-800"></span>
+                    </div>
+                     <div class="result-item">
+                        <span class="font-medium text-gray-600">Desconto Custo Fixo:</span>
+                        <span id="valorDesconto" class="font-semibold text-green-600"></span>
+                    </div>
+                    <div class="result-item">
+                        <span class="font-medium text-gray-600">Custo com Pedágios:</span>
+                        <span id="custoPedagio" class="font-semibold text-gray-800"></span>
+                    </div>
+                    <div class="result-item">
+                        <span class="font-medium text-gray-600">Custo com Refeições:</span>
+                        <span id="custoRefeicao" class="font-semibold text-gray-800"></span>
+                    </div>
+                    <div class="result-item pt-4">
+                        <span class="font-bold text-gray-800">CUSTO TOTAL DA VIAGEM:</span>
+                        <span id="custoTotal" class="font-bold text-red-600 text-lg"></span>
+                    </div>
+                    <div class="result-item">
+                        <span class="font-medium text-gray-600">Lucro por KM Rodado:</span>
+                        <span id="lucroKmRodado" class="font-semibold text-gray-800"></span>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-6 border-t-2 border-dashed">
+                    <div class="result-item">
+                        <span class="font-bold text-xl text-gray-800">VALOR A COBRAR:</span>
+                        <span id="valorTotal" class="total-highlight"></span>
+                    </div>
+                    <div class="result-item">
+                        <span class="font-bold text-lg text-gray-800">Valor Médio por KM:</span>
+                        <span id="valorMedioKm" class="km-highlight"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function setTripType(type) {
+            const btnIda = document.getElementById('btnIda');
+            const btnIdaVolta = document.getElementById('btnIdaVolta');
+            document.getElementById('tripType').value = type;
+
+            if (type === 'ida') {
+                btnIda.classList.remove('bg-gray-50', 'text-gray-700');
+                btnIda.classList.add('bg-green-500', 'text-white');
+                btnIdaVolta.classList.remove('bg-green-500', 'text-white');
+                btnIdaVolta.classList.add('bg-gray-50', 'text-gray-700');
+            } else {
+                btnIdaVolta.classList.remove('bg-gray-50', 'text-gray-700');
+                btnIdaVolta.classList.add('bg-green-500', 'text-white');
+                btnIda.classList.remove('bg-green-500', 'text-white');
+                btnIda.classList.add('bg-gray-50', 'text-gray-700');
+            }
+        }
+
+        function formatCurrency(value) {
+            return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function calculateFreight() {
+            // --- Obter valores dos inputs ---
+            const distanciaOriginal = parseFloat(document.getElementById('distancia').value) || 0;
+            const pedagioOriginal = parseFloat(document.getElementById('pedagio').value) || 0;
+            const precoGasolina = parseFloat(document.getElementById('precoGasolina').value) || 0;
+            const kmLitro = parseFloat(document.getElementById('kmLitro').value) || 1;
+            const despesaFixa = parseFloat(document.getElementById('despesaFixa').value) || 0;
+            const diasTrabalhados = parseFloat(document.getElementById('diasTrabalhados').value) || 1;
+            const custoAlmoco = parseFloat(document.getElementById('custoAlmoco').value) || 0;
+            const fatorKm = parseFloat(document.getElementById('fatorKm').value) || 0;
+            const descontoFixo = parseFloat(document.getElementById('descontoFixo').value) || 0;
+            const tripType = document.getElementById('tripType').value;
+            
+            // --- Ajustar valores para Ida e Volta ---
+            const isRoundTrip = tripType === 'ida_volta';
+            const distanciaCalculo = isRoundTrip ? distanciaOriginal * 2 : distanciaOriginal;
+            const pedagioCalculo = isRoundTrip ? pedagioOriginal * 2 : pedagioOriginal;
+
+            // --- Cálculos ---
+
+            // 1. Custo com Combustível
+            const litrosGastos = distanciaCalculo / kmLitro;
+            const vlrCombustivel = litrosGastos * precoGasolina;
+
+            // 2. Custo Fixo Diário com Desconto
+            const custoFixoDiario = despesaFixa / diasTrabalhados;
+            const horasDeViagem = distanciaCalculo / 70; 
+            const diasDeViagem = Math.ceil(horasDeViagem / 8);
+            const vlrCustoFixoBruto = diasDeViagem * custoFixoDiario;
+            const valorDescontoAplicado = vlrCustoFixoBruto * (descontoFixo / 100);
+            const vlrCustoFixo = vlrCustoFixoBruto - valorDescontoAplicado;
+
+            // 3. Lucro por KM Rodado
+            const vlrLucroKm = distanciaCalculo * fatorKm;
+
+            // 4. Custo com refeições
+            const vlrRefeicao = diasDeViagem * custoAlmoco;
+
+            // 5. Custo Total da Viagem (soma de todos os custos reais)
+            const custoTotalViagem = vlrCombustivel + vlrCustoFixo + pedagioCalculo + vlrRefeicao;
+            
+            // 6. Preço Final (Custo Total + Lucro por KM)
+            const precoFinal = custoTotalViagem + vlrLucroKm;
+            
+            // 7. Valor Médio por KM (baseado na distância original que o cliente entende)
+            const valorKmMedio = precoFinal / distanciaOriginal;
+
+            // --- Exibir Resultados ---
+            document.getElementById('custoCombustivel').textContent = formatCurrency(vlrCombustivel);
+            document.getElementById('custoFixo').textContent = `${formatCurrency(vlrCustoFixo)} (${diasDeViagem} diária(s))`;
+            document.getElementById('valorDesconto').textContent = `- ${formatCurrency(valorDescontoAplicado)} (${descontoFixo}%)`;
+            document.getElementById('custoPedagio').textContent = formatCurrency(pedagioCalculo);
+            document.getElementById('custoRefeicao').textContent = formatCurrency(vlrRefeicao);
+            document.getElementById('lucroKmRodado').textContent = formatCurrency(vlrLucroKm);
+            
+            document.getElementById('custoTotal').textContent = formatCurrency(custoTotalViagem);
+            document.getElementById('valorTotal').textContent = formatCurrency(precoFinal);
+            document.getElementById('valorMedioKm').textContent = `${formatCurrency(valorKmMedio)} / km`;
+
+            // Exibe o card de resultados
+            document.getElementById('resultCard').classList.remove('hidden');
+        }
+    </script>
+
+</body>
+</html>
+
